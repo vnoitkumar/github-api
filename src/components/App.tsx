@@ -1,15 +1,8 @@
 import React from 'react';
+import AllUsers from './all-users';
 
 function App() {
-  return (
-    <div className='App'>
-      <header className='App-header'>
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-      </header>
-    </div>
-  );
+  return <AllUsers />;
 }
 
 export default App;
