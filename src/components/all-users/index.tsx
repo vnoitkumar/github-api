@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { createUseStyles } from 'react-jss';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import style from './all-users-style';
-import { FixedSizeList as List } from 'react-window';
+import InfiniteScroll from 'react-infinite-scroller';
 
 interface User {
   id: number;
@@ -10,42 +10,67 @@ interface User {
   avatar_url: string;
 }
 
+let offset = 1;
+
 const useStyles = createUseStyles(style);
 
 function AllUsers() {
   const [users, setUsers] = useState([]);
-  // const [moreItemsLoading, setMoreItemsLoading] = useState(false);
-  // const [hasNextPage, setHasNextPage] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
 
-  const { container, userDetails, userWrapper, userImg } = useStyles();
+  const { container, details, wrapper, img } = useStyles();
 
-  // function loadMore() {
-  //   // method to fetch newer entries for the list
-  // }
+  async function getUsers() {
+    try {
+      const { headers, data = [] } = await axios.get(
+        'https://api.github.com/users',
+        {
+          params: {
+            since: offset,
+          },
+        }
+      );
 
-  useEffect(function () {
-    (async function getUsers() {
+      let since;
+
       try {
-        const { data = [] } = await axios.get('https://api.github.com/users');
-
-        setUsers(data);
+        since = headers.link.split('?since=')[1].split('>;')[0];
       } catch (error) {
-        console.error(error);
+        setHasMore(false);
       }
-    })();
-  }, []);
+
+      offset = since;
+
+      const userData = [...users, ...data];
+      setUsers(userData);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const userList = users.map(function (user: User) {
     return (
-      <div key={user.id} className={userWrapper}>
-        <img className={userImg} src={user.avatar_url} alt={user.login} />
+      <div key={user.id} className={wrapper}>
+        <img className={img} src={user.avatar_url} alt={user.login} />
       </div>
     );
   });
 
   return (
     <section className={container}>
-      <div className={userDetails}>{userList}</div>
+      <InfiniteScroll
+        className={details}
+        pageStart={0}
+        loadMore={getUsers}
+        hasMore={hasMore}
+        loader={
+          <div key={0}>
+            <span>Loading...</span>
+          </div>
+        }
+      >
+        {userList}
+      </InfiniteScroll>
     </section>
   );
 }
